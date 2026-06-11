@@ -7,6 +7,7 @@ from models.company import Company
 from models.user import User
 from helpers.get_current_user import get_current_user
 from helpers.rbac import require_admin, require_manager_or_admin
+from controllers.audit_controller import log_action
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -45,11 +46,12 @@ async def create_project(data: ProjectCreate, user: User = Depends(require_manag
         company_id=user.company_id,
         created_by=user.id
     )
+    await log_action(user.id, "created project", "project", project.id)
     return project
 
 @router.get("/", response_model=List[ProjectResponse])
 async def list_projects(user: User = Depends(get_current_user)):
-    projects = await Project.filter(company_id=user.company_id)
+    projects = await Project.filter(company_id=user.company_id, is_deleted=False)
     return projects
 
 @router.put("/{id}", response_model=ProjectResponse)
@@ -69,7 +71,8 @@ async def update_project(id: uuid.UUID, data: ProjectUpdate, user: User = Depend
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(id: uuid.UUID, user: User = Depends(require_admin)):
     project = await Project.get_or_none(id=id, company_id=user.company_id)
-    if not project:
+    if not project or project.is_deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="project not found")
     
-    await project.delete()
+    project.is_deleted = True
+    await project.save()

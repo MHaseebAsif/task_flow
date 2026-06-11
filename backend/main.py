@@ -1,3 +1,7 @@
+# main.py
+from dotenv import load_dotenv
+load_dotenv()  # ← Must be FIRST, before all other imports
+
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
 from helpers.tortoise_config import TORTOISE_ORM
@@ -25,3 +29,4 @@ register_tortoise(
     generate_schemas=True,
     add_exception_handlers=True,
 )
+

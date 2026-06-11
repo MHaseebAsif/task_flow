@@ -7,6 +7,7 @@ from models.project import Project
 from models.user import User
 from helpers.get_current_user import get_current_user
 from helpers.rbac import require_manager_or_admin
+from controllers.audit_controller import log_action
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -65,7 +66,7 @@ async def list_tasks(
     project_id: Optional[uuid.UUID] = None,
     user: User = Depends(get_current_user)
 ):
-    query = Task.filter()
+    query = Task.filter(is_deleted=False)
     if project_id:
         project = await Project.get_or_none(id=project_id, company_id=user.company_id)
         if not project:
@@ -119,6 +120,7 @@ async def assign_task(id: uuid.UUID, data: TaskAssign, user: User = Depends(requ
     
     task.assigned_to = data.assigned_to
     await task.save()
+    await log_action(user.id, "assigned task", "task", task.id)
     return task
 
 @router.patch("/{id}/status", response_model=TaskResponse)
@@ -132,4 +134,18 @@ async def update_task_status(id: uuid.UUID, data: TaskStatus, user: User = Depen
     
     task.status = data.status
     await task.save()
+    await log_action(user.id, "changed status", "task", task.id)
     return task
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_task(id: uuid.UUID, user: User = Depends(get_current_user)):
+    task = await Task.get_or_none(id=id)
+    if not task or task.is_deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="task not found")
+    
+    project = await Project.get_or_none(id=task.project_id, company_id=user.company_id)
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="task not found")
+    
+    task.is_deleted = True
+    await task.save()

@@ -11,6 +11,7 @@ class Task(Model):
     project_id = fields.UUIDField()
     assigned_to = fields.UUIDField(null=True)
     created_by = fields.UUIDField()
+    is_deleted = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
 
     class Meta:

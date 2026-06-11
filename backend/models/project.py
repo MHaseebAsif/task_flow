@@ -8,6 +8,7 @@ class Project(Model):
     description = fields.TextField(null=True)
     company_id = fields.UUIDField()
     created_by = fields.UUIDField()
+    is_deleted = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
 
     class Meta:

@@ -25,6 +25,6 @@ async def create_company(data: CompanyCreate, user: User = Depends(require_admin
 @router.get("/{id}", response_model=CompanyResponse)
 async def get_company(id: uuid.UUID, user: User = Depends(get_current_user)):
     company = await Company.get_or_none(id=id)
-    if not company:
+    if not company or company.is_deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="company not found")
     return company
