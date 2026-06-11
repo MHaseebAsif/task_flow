@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from uuid import UUID
 from models.user import User
+from models.company import Company
 from helpers.auth import get_hash, verify_hash, create_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -26,6 +27,16 @@ async def register(req: RegisterReq):
     exists = await User.get_or_none(email=req.email)
     if exists:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="email taken")
+        
+    company = await Company.get_or_none(id=req.company_id)
+    if not company or company.is_deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="company not found")
+        
+    user_count = await User.filter(company_id=req.company_id).count()
+    if company.subscription_plan == "free" and user_count >= 5:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="free plan limit reached")
+    if company.subscription_plan == "pro" and user_count >= 50:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="pro plan limit reached")
         
     user = await User.create(
         name=req.name,

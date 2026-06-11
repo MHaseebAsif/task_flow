@@ -17,6 +17,9 @@ class CompanyResponse(BaseModel):
     name: str
     subscription_plan: str
 
+class CompanySubscriptionUpdate(BaseModel):
+    subscription_plan: str
+
 @router.post("/", response_model=CompanyResponse, status_code=status.HTTP_201_CREATED)
 async def create_company(data: CompanyCreate, user: User = Depends(require_admin)):
     company = await Company.create(name=data.name, subscription_plan=data.subscription_plan)
@@ -27,4 +30,14 @@ async def get_company(id: uuid.UUID, user: User = Depends(get_current_user)):
     company = await Company.get_or_none(id=id)
     if not company or company.is_deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="company not found")
+    return company
+
+@router.patch("/{id}/subscription", response_model=CompanyResponse)
+async def update_company_subscription(id: uuid.UUID, data: CompanySubscriptionUpdate, user: User = Depends(require_admin)):
+    company = await Company.get_or_none(id=id)
+    if not company or company.is_deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="company not found")
+    
+    company.subscription_plan = data.subscription_plan
+    await company.save()
     return company
