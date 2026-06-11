@@ -12,6 +12,7 @@ TORTOISE_ORM = {
                 "models.company",
                 "models.project",
                 "models.task",
+                "models.audit_log",
                 "aerich.models"
             ],
             "default_connection": "default",
