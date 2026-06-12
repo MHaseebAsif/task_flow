@@ -11,3 +11,8 @@ async def require_manager_or_admin(user: User = Depends(get_current_user)) -> Us
     if user.role not in ["admin", "manager"]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="manager or admin only")
     return user
+
+async def require_super_admin(user: User = Depends(get_current_user)) -> User:
+    if user.role != "super_admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="super admin only")
+    return user

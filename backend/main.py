@@ -12,6 +12,7 @@ from controllers.project_controller import router as project_router
 from controllers.task_controller import router as task_router
 from controllers.audit_controller import router as audit_router
 from controllers.dashboard_controller import router as dashboard_router
+from controllers.admin_controller import router as admin_router
 
 app = FastAPI()
 
@@ -22,6 +23,7 @@ app.include_router(project_router)
 app.include_router(task_router)
 app.include_router(audit_router)
 app.include_router(dashboard_router)
+app.include_router(admin_router)
 
 register_tortoise(
     app,
