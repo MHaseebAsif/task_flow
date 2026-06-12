@@ -8,9 +8,6 @@ from helpers.rbac import require_admin
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
-class CompanyCreate(BaseModel):
-    name: str
-    subscription_plan: str = "free"
 
 class CompanyResponse(BaseModel):
     id: uuid.UUID
@@ -19,11 +16,6 @@ class CompanyResponse(BaseModel):
 
 class CompanySubscriptionUpdate(BaseModel):
     subscription_plan: str
-
-@router.post("/", response_model=CompanyResponse, status_code=status.HTTP_201_CREATED)
-async def create_company(data: CompanyCreate, user: User = Depends(require_admin)):
-    company = await Company.create(name=data.name, subscription_plan=data.subscription_plan)
-    return company
 
 @router.get("/{id}", response_model=CompanyResponse)
 async def get_company(id: uuid.UUID, user: User = Depends(get_current_user)):
