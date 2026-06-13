@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LayoutGrid, ArrowRight, Mail, Lock, User, Building2, Eye, EyeOff, Upload, X } from "lucide-react";
 import { signup } from "../../Helpers/authApi";
+import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 
 const Signup = () => {
@@ -49,6 +50,10 @@ const Signup = () => {
         formData.append("logo", logoFile);
       }
 
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ', ' + pair[1]);
+      }
+
       const response = await signup(formData);
       const { token, user } = response.data;
       login(token, user);
@@ -61,7 +66,12 @@ const Signup = () => {
         navigate("/company/dashboard");
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "An error occurred during signup.");
+      const detail = err.response?.data?.detail;
+      let message = "Signup failed";
+      if (typeof detail === "string") message = detail;
+      else if (Array.isArray(detail)) message = detail.map(d => d.msg).join(", ");
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

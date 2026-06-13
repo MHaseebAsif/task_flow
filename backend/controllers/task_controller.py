@@ -62,12 +62,12 @@ async def create_task(data: TaskCreate, user: User = Depends(get_current_user)):
 async def list_tasks(
     status: Optional[str] = None,
     priority: Optional[str] = None,
-    assigned_to: Optional[uuid.UUID] = None,
-    project_id: Optional[uuid.UUID] = None,
+    assigned_to: Optional[str] = None,
+    project_id: Optional[str] = None,
     user: User = Depends(get_current_user)
 ):
     query = Task.filter(is_deleted=False)
-    if project_id:
+    if project_id and project_id.strip():
         project = await Project.get_or_none(id=project_id, company_id=user.company_id)
         if not project:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="project not found")
@@ -76,11 +76,11 @@ async def list_tasks(
         projects = await Project.filter(company_id=user.company_id).values_list("id", flat=True)
         query = query.filter(project_id__in=projects)
     
-    if status:
+    if status and status.strip():
         query = query.filter(status=status)
-    if priority:
+    if priority and priority.strip():
         query = query.filter(priority=priority)
-    if assigned_to:
+    if assigned_to and assigned_to.strip():
         query = query.filter(assigned_to=assigned_to)
         
     tasks = await query
