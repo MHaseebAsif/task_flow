@@ -3,7 +3,6 @@ import Hero from "../components/Hero";
 import Features from "../components/Features";
 import Ecosystem from "../components/Ecosystem";
 import ProjectShowcase from "../components/ProjectShowcase";
-import Footer from "../components/Footer";
 
 const LandingPage = () => {
   return (
@@ -35,7 +34,6 @@ const LandingPage = () => {
       <Features />
       <Ecosystem />
       <ProjectShowcase />
-      <Footer />
     </div>
   );
 };
