@@ -1,49 +1,61 @@
 import { useState, useEffect, useMemo } from "react";
-import { getAuditLogs } from "../../Helpers/companyApi";
+import { getAuditLogs, getAllUsers } from "../../Helpers/companyApi";
 import DataTable from "../../Component/DataTable";
 import toast from "react-hot-toast";
 
 const AuditLogs = () => {
   const [logs, setLogs] = useState([]);
+  const [users, setUsers] = useState({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLogs = async () => {
+    const fetchData = async () => {
       try {
-        const response = await getAuditLogs();
-        setLogs(response.data);
+        const [logsResponse, usersResponse] = await Promise.all([
+          getAuditLogs(),
+          getAllUsers()
+        ]);
+        
+        const usersMap = {};
+        usersResponse.data.forEach(user => {
+          usersMap[user.id] = user.full_name || user.name;
+        });
+        
+        setUsers(usersMap);
+        setLogs(logsResponse.data);
       } catch (error) {
         toast.error(error.response?.data?.detail || "Failed to load audit logs");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchLogs();
+    fetchData();
   }, []);
 
   const columns = useMemo(() => [
     {
       accessorKey: "action",
-      header: "Action",
-      cell: (info) => <span className="font-medium text-white capitalize">{info.getValue()?.replace("_", " ")}</span>
+      header: () => <div className="text-center w-full">Action</div>,
+      cell: (info) => <div className="text-center"><span className="font-medium text-white capitalize">{info.getValue()?.replace("_", " ")}</span></div>
     },
     {
       id: "entity",
-      accessorFn: (row) => `${row.entity_type} ${row.entity_id ? `(#${row.entity_id})` : ""}`,
-      header: "Entity",
-      cell: (info) => <span className="text-gray-400 capitalize">{info.getValue()}</span>
+      accessorFn: (row) => `${row.entity || ""} ${row.entity_id ? `(#${row.entity_id.substring(0, 8)})` : ""}`.trim(),
+      header: () => <div className="text-center w-full">Entity</div>,
+      cell: (info) => <div className="text-center"><span className="text-gray-400 capitalize">{info.getValue()}</span></div>
     },
     {
       id: "user",
-      accessorFn: (row) => row.user?.full_name || row.user?.name || "System",
-      header: "User",
+      accessorFn: (row) => row.user_id ? (users[row.user_id] || row.user_id) : "System",
+      header: () => <div className="text-center w-full">User</div>,
+      cell: (info) => <div className="text-center">{info.getValue()}</div>
     },
     {
       accessorKey: "created_at",
-      header: "Date",
-      cell: (info) => <span className="text-gray-400">{new Date(info.getValue()).toLocaleString()}</span>
+      header: () => <div className="text-center w-full">Date</div>,
+      cell: (info) => <div className="text-center"><span className="text-gray-400">{new Date(info.getValue()).toLocaleString()}</span></div>
     }
-  ], []);
+  ], [users]);
 
   return (
     <div className="space-y-8">

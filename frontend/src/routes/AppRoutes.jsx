@@ -16,7 +16,6 @@ import ProjectDetails from '../company/pages/ProjectDetails';
 import Tasks from '../company/pages/Tasks';
 import Team from '../company/pages/Team';
 import AuditLogs from '../company/pages/AuditLogs';
-import Settings from '../company/pages/Settings';
 
 const AppRoutes = () => {
   return (
@@ -41,7 +40,6 @@ const AppRoutes = () => {
           <Route path="tasks" element={<Tasks />} />
           <Route path="team" element={<Team />} />
           <Route path="audit-logs" element={<AuditLogs />} />
-          <Route path="settings" element={<Settings />} />
         </Route>
       </Route>
     </Routes>

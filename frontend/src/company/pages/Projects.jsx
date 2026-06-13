@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, PencilLine, Trash2 } from "lucide-react";
 import { getProjects, createProject, updateProject, deleteProject } from "../../Helpers/projectApi";
 import { useAuth } from "../../context/AuthContext";
 import Modal from "../../Component/Modal";
+import DataTable from "../../Component/DataTable";
 import toast from "react-hot-toast";
 
 const Projects = () => {
@@ -86,6 +87,81 @@ const Projects = () => {
     navigate(`/company/projects/${id}`);
   };
 
+  const columns = useMemo(() => {
+    const cols = [
+      {
+        accessorKey: "name",
+        header: () => <div className="text-center">Name</div>,
+        cell: (info) => (
+          <div className="flex justify-center">
+            <button 
+              onClick={() => handleCardClick(info.row.original.id)}
+              className="font-medium text-white hover:text-primary transition-colors text-center"
+            >
+              {info.getValue()}
+            </button>
+          </div>
+        )
+      },
+      {
+        accessorKey: "description",
+        header: () => <div className="text-center">Description</div>,
+        cell: (info) => (
+          <div className="flex justify-center">
+            <span 
+              className="text-gray-400 block max-w-xs md:max-w-md truncate text-center" 
+              title={info.getValue()}
+            >
+              {info.getValue() || "No description provided."}
+            </span>
+          </div>
+        )
+      },
+      {
+        accessorKey: "created_at",
+        header: () => <div className="text-center">Created Date</div>,
+        cell: (info) => (
+          <div className="text-center text-gray-400">
+            {new Date(info.getValue()).toLocaleDateString()}
+          </div>
+        )
+      }
+    ];
+
+    if (isAdminOrManager) {
+      cols.push({
+        id: "actions",
+        header: () => <div className="text-center">Actions</div>,
+        cell: ({ row }) => {
+          const project = row.original;
+          return (
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenModal(project);
+                }}
+                className="text-gray-400 hover:text-white transition-colors"
+                title="Edit project"
+              >
+                <PencilLine className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => handleDelete(e, project.id)}
+                className="text-red-500/70 hover:text-red-500 transition-colors"
+                title="Delete project"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          );
+        }
+      });
+    }
+
+    return cols;
+  }, [isAdminOrManager]);
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
@@ -100,54 +176,12 @@ const Projects = () => {
         )}
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-12 text-gray-400 text-sm animate-pulse">Loading projects...</div>
-      ) : projects.length === 0 ? (
-        <div className="text-center py-12 text-gray-400 text-sm bg-surface border border-white/10 rounded-2xl">
-          No projects yet
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <div
-              key={project.id}
-              onClick={() => handleCardClick(project.id)}
-              className="bg-surface border border-white/10 rounded-2xl p-6 hover:border-primary/50 transition-colors cursor-pointer group relative flex flex-col h-full"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-white line-clamp-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  {project.name}
-                </h3>
-                {isAdminOrManager && (
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenModal(project);
-                      }}
-                      className="p-1.5 text-gray-400 hover:text-white bg-white/5 rounded-md transition-colors"
-                    >
-                      <PencilLine className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => handleDelete(e, project.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-500 bg-white/5 rounded-md transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-              <p className="text-sm text-gray-400 line-clamp-3 mb-6 flex-grow">
-                {project.description || "No description provided."}
-              </p>
-              <div className="text-xs text-gray-500 mt-auto pt-4 border-t border-white/10">
-                Created {new Date(project.created_at).toLocaleDateString()}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <DataTable 
+        columns={columns} 
+        data={projects} 
+        loading={isLoading} 
+        emptyMessage="No projects yet" 
+      />
 
       <Modal
         isOpen={isModalOpen}

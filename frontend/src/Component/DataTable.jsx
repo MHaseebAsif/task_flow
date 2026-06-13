@@ -31,10 +31,10 @@ const DataTable = ({ columns, data, loading, emptyMessage = "No data found" }) =
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className={`px-6 py-4 font-medium ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
+                    className={`px-6 py-4 font-medium text-center ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
                     onClick={header.column.getToggleSortingHandler()}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center gap-2">
                       {flexRender(
                         header.column.columnDef.header,
                         header.getContext()

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { LayoutGrid, LayoutDashboard, Building2, LogOut, ChevronLeft, ChevronRight, Menu } from "lucide-react";
+import { LayoutGrid, LayoutDashboard, Building2, LogOut, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 
 const AdminLayout = () => {
   const { user, logout } = useAuth();
@@ -105,10 +105,10 @@ const AdminLayout = () => {
 
         <header className="h-16 border-b border-white/10 bg-background/50 backdrop-blur-md flex items-center justify-between md:justify-end px-4 md:px-6 sticky top-0 z-10">
           <button 
-            className="md:hidden p-2 text-gray-400 hover:text-white"
-            onClick={() => setMobileOpen(true)}
+            className="md:hidden p-2 text-gray-400 hover:text-white relative z-[60]"
+            onClick={() => setMobileOpen(!mobileOpen)}
           >
-            <Menu className="w-6 h-6" />
+            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </header>
 

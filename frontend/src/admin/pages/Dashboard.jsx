@@ -150,7 +150,8 @@ const Dashboard = () => {
               <h2 className="text-lg font-semibold text-white mb-6" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                 Companies by Plan
               </h2>
-              <div className="h-[250px] w-full flex items-center justify-center">
+              <div className="h-[250px] w-full flex items-center justify-center relative">
+                <div className="absolute inset-0 bg-[#a855f7]/15 rounded-full blur-[60px] pointer-events-none scale-75" />
                 {companiesData.length === 0 ? (
                   <p className="text-sm text-gray-500">No companies found</p>
                 ) : (
