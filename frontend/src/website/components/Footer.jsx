@@ -59,7 +59,6 @@ export default function Footer() {
 
         <div className="w-full pt-6 border-t border-white/10 flex flex-col items-center justify-center text-center gap-2 text-[11px] font-mono text-slate-600 tracking-wider">
           <span>&copy; {currentYear} TASKFLOW. ALL RIGHTS RESERVED.</span>
-          <span className="text-primary/40">FASTAPI // REACT // POSTGRESQL</span>
         </div>
 
       </div>
