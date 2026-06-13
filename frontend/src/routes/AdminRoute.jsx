@@ -5,7 +5,7 @@ const AdminRoute = () => {
   const { user, token } = useAuth();
   
   if (!token) return <Navigate to="/login" replace />;
-  if (user?.role !== 'super_admin') return <Navigate to="/company/dashboard" replace />;
+  if (user?.role !== 'super_admin') return <Navigate to="/login" replace />;
   
   return <Outlet />;
 };

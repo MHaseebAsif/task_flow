@@ -6,7 +6,7 @@ const CompanyRoute = () => {
   
   if (!token) return <Navigate to="/login" replace />;
   if (!['admin', 'manager', 'member'].includes(user?.role)) {
-    return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/login" replace />;
   }
   
   return <Outlet />;

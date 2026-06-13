@@ -12,6 +12,7 @@ import CompanyRoute from './CompanyRoute';
 import CompanyLayout from '../company/layouts/CompanyLayout';
 import CompanyDashboard from '../company/pages/Dashboard';
 import Projects from '../company/pages/Projects';
+import ProjectDetails from '../company/pages/ProjectDetails';
 import Tasks from '../company/pages/Tasks';
 import Team from '../company/pages/Team';
 import AuditLogs from '../company/pages/AuditLogs';
@@ -36,6 +37,7 @@ const AppRoutes = () => {
         <Route element={<CompanyLayout />}>
           <Route path="dashboard" element={<CompanyDashboard />} />
           <Route path="projects" element={<Projects />} />
+          <Route path="projects/:id" element={<ProjectDetails />} />
           <Route path="tasks" element={<Tasks />} />
           <Route path="team" element={<Team />} />
           <Route path="audit-logs" element={<AuditLogs />} />

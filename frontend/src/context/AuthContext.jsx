@@ -22,14 +22,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token, user]);
 
-  const login = (data) => {
-    setToken(data.token);
-    setUser(data.user);
+  const login = (newToken, newUser) => {
+    setToken(newToken);
+    setUser(newUser);
   };
 
   const logout = () => {
     setToken(null);
     setUser(null);
+    window.location.href = '/login';
   };
 
   return (
