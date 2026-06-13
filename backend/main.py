@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()  # ← Must be FIRST, before all other imports
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 from helpers.tortoise_config import TORTOISE_ORM
 from controllers.auth_controller import router as auth_router
@@ -15,6 +16,14 @@ from controllers.dashboard_controller import router as dashboard_router
 from controllers.admin_controller import router as admin_router
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth_router)
 app.include_router(user_router)
