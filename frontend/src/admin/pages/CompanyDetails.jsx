@@ -1,43 +1,64 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Users, FolderKanban, ListChecks, ChevronDown } from "lucide-react";
+import { getCompanyDetails, updateCompanyStatus, updateCompanySubscription } from "../../Helpers/adminApi";
+import toast from "react-hot-toast";
 
 const CompanyDetails = () => {
   const { id } = useParams();
 
-  const [company, setCompany] = useState({
-    id: id || "1",
-    name: "Acme Corp",
-    plan: "pro",
-    status: "active",
-    createdAt: "2023-10-15",
-    usersCount: 12,
-    projectsCount: 5,
-    tasksCount: 128,
-  });
-
-  const [teamMembers] = useState([
-    {
-      id: 1,
-      name: "Ali Khan",
-      email: "ali@acme.com",
-      role: "admin",
-    },
-  ]);
-
+  const [company, setCompany] = useState(null);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isPlanDropdownOpen, setIsPlanDropdownOpen] = useState(false);
 
-  const toggleStatus = () => {
-    setCompany(prev => ({
-      ...prev,
-      status: prev.status === "active" ? "blocked" : "active"
-    }));
+  const fetchDetails = async () => {
+    try {
+      const response = await getCompanyDetails(id);
+      setCompany(response.data);
+      if (response.data.users) {
+        setTeamMembers(response.data.users);
+      }
+    } catch (error) {
+      toast.error("Failed to load company details");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const updatePlan = (newPlan) => {
-    setCompany(prev => ({ ...prev, plan: newPlan }));
-    setIsPlanDropdownOpen(false);
+  useEffect(() => {
+    fetchDetails();
+  }, [id]);
+
+  const toggleStatus = async () => {
+    try {
+      await updateCompanyStatus(id, !company.is_active);
+      toast.success(company.is_active ? "Company blocked successfully" : "Company unblocked successfully");
+      fetchDetails();
+    } catch (error) {
+      toast.error("Failed to update status");
+    }
   };
+
+  const updatePlan = async (newPlan) => {
+    try {
+      await updateCompanySubscription(id, newPlan);
+      toast.success("Subscription plan updated");
+      fetchDetails();
+    } catch (error) {
+      toast.error("Failed to update subscription");
+    } finally {
+      setIsPlanDropdownOpen(false);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="text-center py-12 text-gray-400 text-sm animate-pulse">Loading company details...</div>;
+  }
+
+  if (!company) {
+    return <div className="text-center py-12 text-red-500 text-sm">Company not found</div>;
+  }
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -53,18 +74,18 @@ const CompanyDetails = () => {
           </h1>
           <div className="flex flex-wrap items-center gap-3">
             <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium uppercase tracking-wider ${
-              company.plan === "enterprise" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" :
-              company.plan === "pro" ? "bg-primary/10 text-primary border border-primary/20" :
+              company.subscription_plan === "enterprise" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" :
+              company.subscription_plan === "pro" ? "bg-primary/10 text-primary border border-primary/20" :
               "bg-white/5 text-gray-400 border border-white/10"
             }`}>
-              {company.plan}
+              {company.subscription_plan}
             </span>
             <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium tracking-wider ${
-              company.status === "active" ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
+              company.is_active ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
             }`}>
-              {company.status === "active" ? "Active" : "Blocked"}
+              {company.is_active ? "Active" : "Blocked"}
             </span>
-            <span className="text-sm text-gray-400">Created {company.createdAt}</span>
+            <span className="text-sm text-gray-400">Created {new Date(company.created_at).toLocaleDateString()}</span>
           </div>
         </div>
 
@@ -88,12 +109,12 @@ const CompanyDetails = () => {
           <button
             onClick={toggleStatus}
             className={`inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-              company.status === "active" 
+              company.is_active 
                 ? "bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20" 
                 : "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border border-emerald-500/20"
             }`}
           >
-            {company.status === "active" ? "Block Company" : "Unblock Company"}
+            {company.is_active ? "Block Company" : "Unblock Company"}
           </button>
         </div>
       </div>
@@ -104,7 +125,7 @@ const CompanyDetails = () => {
             <Users className="w-5 h-5 text-gray-300" />
           </div>
           <div className="text-3xl font-semibold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            {company.usersCount}
+            {company.user_count || 0}
           </div>
           <div className="text-sm text-gray-400 mt-1">Users</div>
         </div>
@@ -114,7 +135,7 @@ const CompanyDetails = () => {
             <FolderKanban className="w-5 h-5 text-gray-300" />
           </div>
           <div className="text-3xl font-semibold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            {company.projectsCount}
+            {company.project_count || 0}
           </div>
           <div className="text-sm text-gray-400 mt-1">Projects</div>
         </div>
@@ -124,7 +145,7 @@ const CompanyDetails = () => {
             <ListChecks className="w-5 h-5 text-gray-300" />
           </div>
           <div className="text-3xl font-semibold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            {company.tasksCount}
+            {company.task_count || 0}
           </div>
           <div className="text-sm text-gray-400 mt-1">Tasks</div>
         </div>
@@ -136,28 +157,32 @@ const CompanyDetails = () => {
         </h2>
         <div className="bg-surface border border-white/10 rounded-2xl overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-white/5 text-gray-400 border-b border-white/10">
-                <tr>
-                  <th className="px-6 py-4 font-medium">Name</th>
-                  <th className="px-6 py-4 font-medium">Email</th>
-                  <th className="px-6 py-4 font-medium">Role</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5 text-gray-200">
-                {teamMembers.map((member) => (
-                  <tr key={member.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="px-6 py-4 font-medium text-white">{member.name}</td>
-                    <td className="px-6 py-4 text-gray-400">{member.email}</td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium uppercase tracking-wider bg-white/5 text-gray-300 border border-white/10">
-                        {member.role}
-                      </span>
-                    </td>
+            {teamMembers.length === 0 ? (
+              <div className="text-center py-12 text-gray-400 text-sm">No team members found</div>
+            ) : (
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-white/5 text-gray-400 border-b border-white/10">
+                  <tr>
+                    <th className="px-6 py-4 font-medium">Name</th>
+                    <th className="px-6 py-4 font-medium">Email</th>
+                    <th className="px-6 py-4 font-medium">Role</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-gray-200">
+                  {teamMembers.map((member) => (
+                    <tr key={member.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-6 py-4 font-medium text-white">{member.full_name || member.name}</td>
+                      <td className="px-6 py-4 text-gray-400">{member.email}</td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium uppercase tracking-wider bg-white/5 text-gray-300 border border-white/10">
+                          {member.role}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>
