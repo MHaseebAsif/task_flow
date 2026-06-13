@@ -11,16 +11,11 @@ const CompanyLayout = () => {
     { name: "Projects", path: "/company/projects", icon: FolderKanban, roles: ["admin", "manager"] },
     { name: "Tasks", path: "/company/tasks", icon: ListChecks, roles: ["admin", "manager", "member"] },
     { name: "Team", path: "/company/team", icon: Users, roles: ["admin"] },
-    { name: "Audit Logs", path: "/company/audit-logs", icon: History, roles: ["admin"] },
     { name: "Settings", path: "/company/settings", icon: Settings, roles: ["admin"] },
+    { name: "Audit Logs", path: "/company/audit-logs", icon: History, roles: ["admin"] },
   ];
 
   const allowedLinks = navLinks.filter(link => link.roles.includes(user?.role || "member"));
-
-  const getPageTitle = () => {
-    const currentLink = navLinks.find(link => location.pathname.startsWith(link.path));
-    return currentLink ? currentLink.name : "Dashboard";
-  };
 
   const companyName = user?.company?.name || user?.company_name || "Workspace";
   const companyLogo = user?.company?.logo_url || user?.logo_url;
@@ -88,10 +83,7 @@ const CompanyLayout = () => {
         <div className="absolute top-0 right-1/4 w-[600px] h-[600px] rounded-full bg-purple-600 opacity-20 blur-[160px] pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-primary opacity-15 blur-[140px] pointer-events-none" />
 
-        <header className="h-16 border-b border-white/10 bg-background/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-10">
-          <h2 className="text-lg font-semibold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            {getPageTitle()}
-          </h2>
+        <header className="h-16 border-b border-white/10 bg-background/50 backdrop-blur-md flex items-center justify-end px-6 sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-gray-300">{companyName}</span>
             {companyLogo ? (

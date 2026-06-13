@@ -11,10 +11,6 @@ const AdminLayout = () => {
     { name: "Companies", path: "/admin/companies", icon: Building2 },
   ];
 
-  const getPageTitle = () => {
-    const currentLink = navLinks.find(link => location.pathname.startsWith(link.path));
-    return currentLink ? currentLink.name : "Platform Overview";
-  };
 
   return (
     <div className="font-sans bg-background min-h-screen text-white flex">
@@ -85,9 +81,6 @@ const AdminLayout = () => {
         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-primary opacity-15 blur-[140px] pointer-events-none" />
 
         <header className="h-16 border-b border-white/10 bg-background/50 backdrop-blur-md flex items-center px-6 sticky top-0 z-10">
-          <h2 className="text-lg font-semibold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            {getPageTitle()}
-          </h2>
         </header>
 
         <main className="flex-1 p-6 relative z-10">

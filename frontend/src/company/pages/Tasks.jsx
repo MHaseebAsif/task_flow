@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus, PencilLine, ChevronDown } from "lucide-react";
 import { getTasks, createTask, updateTask, assignTask, updateTaskStatus } from "../../Helpers/taskApi";
 import { getProjects } from "../../Helpers/projectApi";
 import { getAllUsers } from "../../Helpers/companyApi";
 import { useAuth } from "../../context/AuthContext";
 import Modal from "../../Component/Modal";
+import DataTable from "../../Component/DataTable";
 import toast from "react-hot-toast";
 
 const Tasks = () => {
@@ -115,17 +116,128 @@ const Tasks = () => {
   const getProjectName = (id) => projects.find(p => p.id === id)?.name || "Unknown";
   const getUserName = (id) => users.find(u => u.id === id)?.full_name || users.find(u => u.id === id)?.name || "Unassigned";
 
+  const columns = useMemo(() => {
+    const cols = [
+      {
+        accessorKey: "title",
+        header: "Title",
+        cell: (info) => (
+          <div className="max-w-[200px] truncate" title={info.getValue()}>
+            {info.getValue()}
+          </div>
+        )
+      },
+      {
+        id: "project",
+        accessorFn: (row) => getProjectName(row.project_id),
+        header: "Project",
+        cell: (info) => <div className="truncate max-w-[150px]">{info.getValue()}</div>
+      },
+      {
+        accessorKey: "priority",
+        header: "Priority",
+        cell: (info) => {
+          const priority = info.getValue();
+          return (
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${
+              priority === "high" ? "bg-red-500/10 text-red-500 border border-red-500/20" :
+              priority === "medium" ? "bg-orange-500/10 text-orange-500 border border-orange-500/20" :
+              "bg-blue-500/10 text-blue-500 border border-blue-500/20"
+            }`}>
+              {priority}
+            </span>
+          );
+        }
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          const task = row.original;
+          return (
+            <div className="relative inline-block">
+              <button
+                onClick={() => {
+                  if (task.assigned_to === user.id) {
+                    setActiveStatusDropdown(activeStatusDropdown === task.id ? null : task.id);
+                    setActiveAssignDropdown(null);
+                  }
+                }}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${
+                  task.status === "done" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
+                  task.status === "in_progress" ? "bg-primary/10 text-primary border-primary/20" :
+                  "bg-white/5 text-gray-300 border-white/10"
+                } ${(task.assigned_to === user.id) ? "cursor-pointer hover:bg-white/10" : "cursor-default"}`}
+              >
+                {task.status.replace("_", " ")}
+                {task.assigned_to === user.id && <ChevronDown className="w-3 h-3" />}
+              </button>
+              {activeStatusDropdown === task.id && (
+                <div className="absolute top-full left-0 mt-1 w-32 bg-surface border border-white/10 rounded-lg shadow-xl overflow-hidden z-20">
+                  {["todo", "in_progress", "done"].map(s => (
+                    <button key={s} onClick={() => handleStatusUpdate(task.id, s)} className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors uppercase">
+                      {s.replace("_", " ")}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        }
+      },
+      {
+        id: "assigned_to",
+        accessorFn: (row) => getUserName(row.assigned_to),
+        header: "Assigned To",
+      }
+    ];
+
+    if (isAdminOrManager) {
+      cols.push({
+        id: "actions",
+        header: () => <div className="text-right">Actions</div>,
+        cell: ({ row }) => {
+          const task = row.original;
+          return (
+            <div className="flex items-center justify-end gap-3">
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setActiveAssignDropdown(activeAssignDropdown === task.id ? null : task.id);
+                    setActiveStatusDropdown(null);
+                  }}
+                  className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  Assign
+                </button>
+                {activeAssignDropdown === task.id && (
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-surface border border-white/10 rounded-lg shadow-xl overflow-hidden z-20">
+                    {users.map(u => (
+                      <button key={u.id} onClick={() => handleAssign(task.id, u.id)} className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                        {u.full_name || u.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => handleOpenModal(task)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <PencilLine className="w-4 h-4" />
+              </button>
+            </div>
+          );
+        }
+      });
+    }
+
+    return cols;
+  }, [projects, users, activeStatusDropdown, activeAssignDropdown, isAdminOrManager, user.id]);
+
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold text-white mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            Tasks
-          </h1>
-          <p className="text-sm text-gray-400">
-            Manage and track all tasks
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
         {isAdminOrManager && (
           <button
             onClick={() => handleOpenModal()}
@@ -172,107 +284,12 @@ const Tasks = () => {
         </select>
       </div>
 
-      <div className="bg-surface border border-white/10 rounded-2xl overflow-hidden shadow-xl min-h-[300px]">
-        <div className="overflow-x-auto">
-          {isLoading ? (
-            <div className="text-center py-12 text-gray-400 text-sm animate-pulse">Loading tasks...</div>
-          ) : tasks.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-sm">No tasks found</div>
-          ) : (
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-white/5 text-gray-400 border-b border-white/10">
-                <tr>
-                  <th className="px-6 py-4 font-medium">Title</th>
-                  <th className="px-6 py-4 font-medium">Project</th>
-                  <th className="px-6 py-4 font-medium">Priority</th>
-                  <th className="px-6 py-4 font-medium">Status</th>
-                  <th className="px-6 py-4 font-medium">Assigned To</th>
-                  {isAdminOrManager && <th className="px-6 py-4 font-medium text-right">Actions</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5 text-gray-200">
-                {tasks.map((task) => (
-                  <tr key={task.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="px-6 py-4 font-medium text-white max-w-[200px] truncate" title={task.title}>{task.title}</td>
-                    <td className="px-6 py-4 truncate max-w-[150px]">{getProjectName(task.project_id)}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${
-                        task.priority === "high" ? "bg-red-500/10 text-red-500 border border-red-500/20" :
-                        task.priority === "medium" ? "bg-orange-500/10 text-orange-500 border border-orange-500/20" :
-                        "bg-blue-500/10 text-blue-500 border border-blue-500/20"
-                      }`}>
-                        {task.priority}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="relative inline-block">
-                        <button
-                          onClick={() => {
-                            if (task.assigned_to === user.id) {
-                              setActiveStatusDropdown(activeStatusDropdown === task.id ? null : task.id);
-                              setActiveAssignDropdown(null);
-                            }
-                          }}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${
-                            task.status === "done" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
-                            task.status === "in_progress" ? "bg-primary/10 text-primary border-primary/20" :
-                            "bg-white/5 text-gray-300 border-white/10"
-                          } ${(task.assigned_to === user.id) ? "cursor-pointer hover:bg-white/10" : "cursor-default"}`}
-                        >
-                          {task.status.replace("_", " ")}
-                          {task.assigned_to === user.id && <ChevronDown className="w-3 h-3" />}
-                        </button>
-                        {activeStatusDropdown === task.id && (
-                          <div className="absolute top-full left-0 mt-1 w-32 bg-surface border border-white/10 rounded-lg shadow-xl overflow-hidden z-20">
-                            {["todo", "in_progress", "done"].map(s => (
-                              <button key={s} onClick={() => handleStatusUpdate(task.id, s)} className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors uppercase">
-                                {s.replace("_", " ")}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">{getUserName(task.assigned_to)}</td>
-                    {isAdminOrManager && (
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-3">
-                          <div className="relative">
-                            <button
-                              onClick={() => {
-                                setActiveAssignDropdown(activeAssignDropdown === task.id ? null : task.id);
-                                setActiveStatusDropdown(null);
-                              }}
-                              className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                            >
-                              Assign
-                            </button>
-                            {activeAssignDropdown === task.id && (
-                              <div className="absolute right-0 top-full mt-1 w-48 bg-surface border border-white/10 rounded-lg shadow-xl overflow-hidden z-20">
-                                {users.map(u => (
-                                  <button key={u.id} onClick={() => handleAssign(task.id, u.id)} className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
-                                    {u.full_name || u.name}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => handleOpenModal(task)}
-                            className="text-gray-400 hover:text-white transition-colors"
-                          >
-                            <PencilLine className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
+      <DataTable 
+        columns={columns} 
+        data={tasks} 
+        loading={isLoading} 
+        emptyMessage="No tasks found" 
+      />
 
       <Modal
         isOpen={isModalOpen}

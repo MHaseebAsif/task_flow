@@ -13,6 +13,7 @@ class CompanyResponse(BaseModel):
     id: uuid.UUID
     name: str
     subscription_plan: str
+    logo_url: str | None = None
 
 class CompanySubscriptionUpdate(BaseModel):
     subscription_plan: str

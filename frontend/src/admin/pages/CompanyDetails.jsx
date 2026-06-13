@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Users, FolderKanban, ListChecks, ChevronDown } from "lucide-react";
 import { getCompanyDetails, updateCompanyStatus, updateCompanySubscription } from "../../Helpers/adminApi";
 import toast from "react-hot-toast";
+import DataTable from "../../Component/DataTable";
 
 const CompanyDetails = () => {
   const { id } = useParams();
@@ -52,6 +53,29 @@ const CompanyDetails = () => {
     }
   };
 
+  const columns = useMemo(() => [
+    {
+      id: "name",
+      accessorFn: (row) => row.full_name || row.name,
+      header: "Name",
+      cell: (info) => <span className="font-medium text-white">{info.getValue()}</span>
+    },
+    {
+      accessorKey: "email",
+      header: "Email",
+      cell: (info) => <span className="text-gray-400">{info.getValue()}</span>
+    },
+    {
+      accessorKey: "role",
+      header: "Role",
+      cell: (info) => (
+        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium uppercase tracking-wider bg-white/5 text-gray-300 border border-white/10">
+          {info.getValue()}
+        </span>
+      )
+    }
+  ], []);
+
   if (isLoading) {
     return <div className="text-center py-12 text-gray-400 text-sm animate-pulse">Loading company details...</div>;
   }
@@ -69,9 +93,6 @@ const CompanyDetails = () => {
 
       <div className="bg-surface border border-white/10 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-start justify-between gap-6 shadow-xl">
         <div>
-          <h1 className="text-3xl font-semibold text-white mb-3" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            {company.name}
-          </h1>
           <div className="flex flex-wrap items-center gap-3">
             <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium uppercase tracking-wider ${
               company.subscription_plan === "enterprise" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" :
@@ -155,36 +176,12 @@ const CompanyDetails = () => {
         <h2 className="text-xl font-semibold text-white mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
           Team Members
         </h2>
-        <div className="bg-surface border border-white/10 rounded-2xl overflow-hidden shadow-xl">
-          <div className="overflow-x-auto">
-            {teamMembers.length === 0 ? (
-              <div className="text-center py-12 text-gray-400 text-sm">No team members found</div>
-            ) : (
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-white/5 text-gray-400 border-b border-white/10">
-                  <tr>
-                    <th className="px-6 py-4 font-medium">Name</th>
-                    <th className="px-6 py-4 font-medium">Email</th>
-                    <th className="px-6 py-4 font-medium">Role</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5 text-gray-200">
-                  {teamMembers.map((member) => (
-                    <tr key={member.id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="px-6 py-4 font-medium text-white">{member.full_name || member.name}</td>
-                      <td className="px-6 py-4 text-gray-400">{member.email}</td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium uppercase tracking-wider bg-white/5 text-gray-300 border border-white/10">
-                          {member.role}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
+        <DataTable 
+          columns={columns} 
+          data={teamMembers} 
+          loading={isLoading} 
+          emptyMessage="No team members found" 
+        />
       </div>
     </div>
   );

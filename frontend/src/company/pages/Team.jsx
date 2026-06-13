@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { getAllUsers, inviteUser } from "../../Helpers/companyApi";
 import Modal from "../../Component/Modal";
+import DataTable from "../../Component/DataTable";
 import toast from "react-hot-toast";
 
 const Team = () => {
@@ -43,17 +44,39 @@ const Team = () => {
     }
   };
 
+  const columns = useMemo(() => [
+    {
+      id: "name",
+      accessorFn: (row) => row.full_name || row.name,
+      header: "Name",
+      cell: (info) => <span className="font-medium text-white">{info.getValue()}</span>
+    },
+    {
+      accessorKey: "email",
+      header: "Email",
+      cell: (info) => <span className="text-gray-400">{info.getValue()}</span>
+    },
+    {
+      accessorKey: "role",
+      header: "Role",
+      cell: (info) => {
+        const role = info.getValue();
+        return (
+          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium uppercase tracking-wider ${
+            role === "admin" ? "bg-red-500/10 text-red-500 border border-red-500/20" :
+            role === "manager" ? "bg-orange-500/10 text-orange-500 border border-orange-500/20" :
+            "bg-white/5 text-gray-300 border border-white/10"
+          }`}>
+            {role}
+          </span>
+        );
+      }
+    }
+  ], []);
+
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold text-white mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            Team
-          </h1>
-          <p className="text-sm text-gray-400">
-            Manage your company's team members
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
         <button
           onClick={() => setIsModalOpen(true)}
           className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors"
@@ -63,42 +86,12 @@ const Team = () => {
         </button>
       </div>
 
-      <div className="bg-surface border border-white/10 rounded-2xl overflow-hidden shadow-xl min-h-[300px]">
-        <div className="overflow-x-auto">
-          {isLoading ? (
-            <div className="text-center py-12 text-gray-400 text-sm animate-pulse">Loading team members...</div>
-          ) : users.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-sm">No team members found</div>
-          ) : (
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-white/5 text-gray-400 border-b border-white/10">
-                <tr>
-                  <th className="px-6 py-4 font-medium">Name</th>
-                  <th className="px-6 py-4 font-medium">Email</th>
-                  <th className="px-6 py-4 font-medium">Role</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5 text-gray-200">
-                {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="px-6 py-4 font-medium text-white">{u.full_name || u.name}</td>
-                    <td className="px-6 py-4 text-gray-400">{u.email}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium uppercase tracking-wider ${
-                        u.role === "admin" ? "bg-red-500/10 text-red-500 border border-red-500/20" :
-                        u.role === "manager" ? "bg-orange-500/10 text-orange-500 border border-orange-500/20" :
-                        "bg-white/5 text-gray-300 border border-white/10"
-                      }`}>
-                        {u.role}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
+      <DataTable 
+        columns={columns} 
+        data={users} 
+        loading={isLoading} 
+        emptyMessage="No team members found" 
+      />
 
       <Modal
         isOpen={isModalOpen}
